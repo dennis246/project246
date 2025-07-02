@@ -271,7 +271,7 @@ public class MathUtil {
         return res;
     }
 
-   public static int pow(int expfactor, int base) {
+    public static int pow(int expfactor, int base) {
 
         if (expfactor == 0) {
             return 1;
@@ -544,6 +544,29 @@ public class MathUtil {
         }
 
         return min;
+    }
+
+    public static int[][] addToIntArray2D(final int[][] target, final int[] item) {
+        final int[][] cArray = (int[][]) target;
+        final int[][] cArrayInc = new int[cArray.length + 1][cArray.length + 1];
+        for (int i = 0; i < cArray.length; i++) {
+            cArrayInc[i] = cArray[i];
+        }
+        // cArrayInc = cArray;
+        cArrayInc[cArrayInc.length - 1] = item;
+
+        return cArrayInc;
+    }
+
+
+    public static int[][] addAllTointArray2D(int[][] mainArr, final int[][] subArr) {
+
+        for (int i = 0; i < subArr.length; i++) {
+            mainArr = addToIntArray2D(mainArr, subArr[i]);
+        }
+
+        return mainArr;
+
     }
 
     public static int[] addToIntArray(int[] target, int item) {
@@ -860,6 +883,12 @@ public class MathUtil {
 
     }
 
+    public static int randomNumberGenerator(int max) {
+
+        int rnum = Double.valueOf(Math.random() * max).intValue();
+        return rnum;
+    }
+
     public static int[] randomNumberSequence(int maxDig) {
 
         int[] seqArr = new int[0];
@@ -942,7 +971,7 @@ public class MathUtil {
             throw new Exception("Not a binary sequence");
         }
 
-        var bsArrOrd = MapUtil.reverse(bsArr);
+        var bsArrOrd = StringUtil.reverse(bsArr);
         int dsum = 0;
         int prevun = 1;
         for (int i = 0; i < bsArrOrd.length; i++) {
@@ -1066,7 +1095,7 @@ public class MathUtil {
 
     }
 
-     public static int[] generateNumArrByRange(final int size, final int from, final int dir) {
+    public static int[] generateNumArrByRange(final int size, final int from, final int dir) {
 
         int[] finalArr = new int[0];
         int inc = from;
@@ -1084,6 +1113,118 @@ public class MathUtil {
         } while (inc != last);
 
         return finalArr;
+    }
+
+    public static int[] generateNumArrByRange(final int size, final int from, final int dir, final int progfactor) {
+
+        int[] finalArr = new int[0];
+        int inc = from;
+
+        int last = dir > 0 ? size : 0;
+        int eol = 0;
+        do {
+
+            finalArr = addToIntArray(finalArr, inc);
+            if (dir > 0) {
+                inc = progfactor > 1 ? inc + progfactor : ++inc;
+                if (inc >= last) {
+                    eol = 1;
+                }
+            } else {
+                inc = progfactor > 1 ? inc - progfactor : --inc;
+                if (inc <= last) {
+                    eol = 1;
+                }
+            }
+
+        } while (eol == 0);
+
+        return finalArr;
+    }
+
+    public static int[] shuffle(int[] mainArr) {
+
+        final int[] finalArr = new int[0];
+        final int[] shuffIndexArr = new int[0];
+        final int totalSize = mainArr.length;
+        // final int pcuts = totalSize < 10 ? totalSize/2;
+        int cutfactor = totalSize / 2 > 5 ? totalSize / 2 : 5;
+        int cuts = 0;
+        while (cuts < 3) {
+            cuts = Double.valueOf(Math.random() * cutfactor).intValue();
+        }
+
+        final int cascadeFactor = totalSize / 2 + 4;
+        final int cascades = Double.valueOf(Math.random() * cascadeFactor).intValue();
+
+        for (; cuts != 0; cuts--) {
+            mainArr = doShuffle(mainArr, cascades);
+        }
+
+        return mainArr;
+
+    }
+
+    private static int[] doShuffle(int[] currentArr, int cascades) {
+
+        try {
+
+            final int maxIndex = currentArr.length - 1;
+            int[] finalCutArr = new int[0];
+            int cutAt = Double.valueOf(Math.random() * maxIndex).intValue();
+
+            if (cutAt > maxIndex) {
+                cutAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            }
+
+            if (cutAt + cascades > maxIndex) {
+                cascades = 0;
+            }
+
+            if (cascades < maxIndex) {
+                // int cutAtCopy = cutAt;
+                for (int x = 0; x < cascades; x++) {
+
+                    if (cutAt > maxIndex) {
+                        cutAt = maxIndex - cutAt;
+                    }
+
+                    finalCutArr = addToIntArray(finalCutArr, currentArr[cutAt]);
+                    currentArr = removeFromIntArray(currentArr, cutAt);
+                }
+
+            }
+
+            int appendAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            while (cutAt == appendAt) {
+                appendAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            }
+
+            for (int x = 0; x < finalCutArr.length; x++, appendAt++) {
+                currentArr = addIntAt(currentArr, appendAt, finalCutArr[x]);
+            }
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+
+        return currentArr;
+    }
+
+    public static int[] distinct(final int[] mainArr) {
+
+        int[] finalArr = new int[0];
+
+        for (int i = 0; i < mainArr.length; i++) {
+
+            if (hasInt(finalArr, mainArr[i]) == 0) {
+                finalArr = addToIntArray(finalArr, mainArr[i]);
+            }
+
+        }
+
+        return finalArr;
+
     }
 
     /*

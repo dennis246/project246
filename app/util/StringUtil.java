@@ -9,8 +9,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
-
-import app.util.MapUtil.FilterCriteria;
+import java.util.Map;
 
 /**
  * @note experimental utility methods
@@ -49,6 +48,15 @@ public class StringUtil {
      * 
      * }
      */
+
+    public enum FilterCriteria {
+        Include, Exclude
+    }
+
+    public enum MatchCriteria {
+        First, Last, All, Any
+    }
+
     public enum SeekPosExclusionCriteria {
         excludeFirst, excludeCurrent, excludeLast, excludeNone
     }
@@ -61,11 +69,11 @@ public class StringUtil {
         Top, Right, Bottom, Left
     }
 
-    enum TrimDirection {
+    public enum TrimDirection {
         Leading, Trailing
     }
 
-    enum Direction {
+    public enum Direction {
         Leading, Trailing
     }
 
@@ -95,7 +103,7 @@ public class StringUtil {
                 if (dir.equals(Direction.Leading)) {
                     mainArr = addAt(mainArr, 0, padChar);
                 } else if (dir.equals(Direction.Trailing)) {
-                    mainArr = addAt(mainArr, mainArr.length - 1, padChar);
+                    mainArr = addToCharArray(mainArr, padChar);
                 }
 
             }
@@ -328,6 +336,44 @@ public class StringUtil {
         // aList2.add("");
     }
 
+    public static char[] generateRandomSequenceWith(int outputLength, char[] mainArr) {
+        char[] finalSeq = new char[0];
+        // int[] midxArr = MathUtil.generateNumArrByRange(mainArr.length, 0, 1);
+        try {
+
+            for (int i = 0; i < outputLength; i++) {
+
+                int regenInd = 0;
+                int ci = -1;
+                do {
+                    ci = MathUtil.randomNumberGenerator(mainArr.length);
+                    char cc = mainArr[ci];
+                    if (finalSeq.length < mainArr.length) {
+
+                        if (hasCharAt(finalSeq, cc, null) != -1) {
+                            regenInd = 1;
+                        } else {
+                            regenInd = 0;
+                        }
+
+                    } else {
+                        regenInd = 0;
+                    }
+
+                } while (regenInd == 1);
+
+                finalSeq = addToCharArray(finalSeq, mainArr[ci]);
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return finalSeq;
+
+    }
+
     public static String randomIDGenerator(int idLength, boolean includeChars, boolean includeNumbers,
             boolean includeSymbols)
             throws Exception {
@@ -484,6 +530,32 @@ public class StringUtil {
         return 0;
     }
 
+    public static int hasCharAt(final char[] currentArr, final char target, final MatchCriteria optCriteria)
+            throws Exception {
+
+        final MatchCriteria matchCriteria = optCriteria == null ? MatchCriteria.First
+                : optCriteria;
+
+        if (!matchCriteria.equals(MatchCriteria.First) && !matchCriteria.equals(MatchCriteria.Last)) {
+            throw new Exception("Invalid criteria");
+        }
+
+        int foundAt = -1;
+        for (int i = 0; i < currentArr.length; i++) {
+
+            if (currentArr[i] == target) {
+                foundAt = i;
+                if (matchCriteria.equals(MatchCriteria.First)) {
+                    return foundAt;
+                }
+            }
+
+        }
+
+        return foundAt;
+
+    }
+
     static int hasChars(char[] mainArr, char[] items) {
 
         int hasCount = 0;
@@ -600,7 +672,7 @@ public class StringUtil {
     }
 
     public static Date parseDate(String cval) {
-        var dateMap = MapUtil.convertToDateMap(cval);
+        var dateMap = convertToDateMap(cval);
 
         var ldtIns = LocalDateTime
                 .of(Integer.parseInt(dateMap.get("year")),
@@ -1049,7 +1121,7 @@ public class StringUtil {
     public static String removeNonAlphaNumericChars(char[] contentArr) {
 
         var charArr2D = stringArrayToCharArray2D(StringUtil.nonAlphaNumericChars_StringArray());
-        String res = new String(MapUtil.removeSequences(contentArr, charArr2D));
+        String res = new String(removeSequences(contentArr, charArr2D));
         return res;
 
     }
@@ -1057,18 +1129,104 @@ public class StringUtil {
     public static String removeNonAlphaNumericChars(String content) {
 
         var charArr2D = stringArrayToCharArray2D(StringUtil.nonAlphaNumericChars_StringArray());
-        String res = new String(MapUtil.removeSequences(content.toCharArray(), charArr2D));
+        String res = new String(removeSequences(content.toCharArray(), charArr2D));
         return res;
+
+    }
+
+    static <E extends Object> int has(final E[] arr, final E item) {
+
+        for (int i = 0; i < arr.length; i++) {
+
+            if (item instanceof Integer || item instanceof Long || item instanceof Double) {
+                if (arr[i] == item) {
+                    return 1;
+                }
+            } else if (item instanceof Array) {
+                // equate(arr[i], item);
+                return 0;
+            } else {
+
+                if (arr[i] != null && arr[i].equals(item)) {
+                    return 1;
+                }
+
+            }
+        }
+        return 0;
+    }
+
+    static <E extends Object> int has(final E[] arr, final E item, final int ignoreCase) {
+
+        try {
+
+            for (int i = 0; i < arr.length; i++) {
+
+                if (item instanceof Integer || item instanceof Long || item instanceof Double) {
+                    if (arr[i] == item) {
+                        return 1;
+                    }
+                } else {
+
+                    if (item instanceof String) {
+                        if (ignoreCase == 1) {
+                            if (arr[i].toString().toLowerCase().equals(item.toString().toLowerCase())) {
+                                return 1;
+                            }
+                        }
+                    } else {
+
+                        if (arr[i].equals(item)) {
+                            return 1;
+                        }
+
+                    }
+
+                }
+            }
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E> E[] filter(final E[] mainArr, final E[] filterArr,
+            final FilterCriteria filterCriteria, final int ignoreCase) {
+        // TODO filter first arr from values of second arr
+
+        E[] finalArr = (E[]) Array.newInstance(mainArr.getClass().getComponentType(), 0);
+        if (mainArr == null || mainArr.length == 0 || filterArr == null || filterArr.length == 0) {
+            return finalArr;
+        }
+
+        for (int i = 0; i < mainArr.length; i++) {
+
+            if (filterCriteria.equals(FilterCriteria.Include)) {
+                if (has(filterArr, mainArr[i], ignoreCase) == 1) {
+                    finalArr = add(finalArr, mainArr[i]);
+                }
+            } else if (filterCriteria.equals(FilterCriteria.Exclude)) {
+                if (has(filterArr, mainArr[i], ignoreCase) == 0) {
+                    finalArr = add(finalArr, mainArr[i]);
+                }
+            }
+
+        }
+
+        return finalArr;
 
     }
 
     public static String removeInvalidLangVarSequences(String content) {
 
-        var filtRes = MapUtil.filter(StringUtil.nonAlphaNumericChars_StringArray(), new String[] { "_" },
+        var filtRes = filter(StringUtil.nonAlphaNumericChars_StringArray(), new String[] { "_" },
                 FilterCriteria.Exclude, 0);
-        //var charArr2D = stringArrayToCharArray2D(StringUtil.nonAlphaNumericChars_StringArray());
+        // var charArr2D =
+        // stringArrayToCharArray2D(StringUtil.nonAlphaNumericChars_StringArray());
         var charArr2D = stringArrayToCharArray2D(filtRes);
-        String res = new String(MapUtil.removeSequences(content.toCharArray(), charArr2D));
+        String res = new String(removeSequences(content.toCharArray(), charArr2D));
         return res;
 
     }
@@ -1087,5 +1245,494 @@ public class StringUtil {
 
         return 1;
     }
+
+    public static char[] removeSequences(char[] currentArr, final char[][] charSeqArr) {
+
+        int[] rsIxArrFinal = new int[0];
+        for (int i = 0; i < currentArr.length; i++) {
+
+            for (int j = 0; j < charSeqArr.length; j++) {
+
+                if (hasChar(charSeqArr[j], currentArr[i]) == 1) {
+                    rsIxArrFinal = MathUtil.addToIntArray(rsIxArrFinal, i);
+                }
+
+            }
+
+        }
+
+        currentArr = removeFromIndexes(currentArr, rsIxArrFinal);
+        return currentArr;
+
+    }
+
+    public static char[] removeFromIndexes(final char[] mainArr, final int[] riArr) {
+
+        char[] procArr = new char[0];
+
+        for (int i = 0; i < mainArr.length; i++) {
+
+            if (MathUtil.hasInt(riArr, i) == 1) {
+                continue;
+            }
+
+            procArr = addToCharArray(procArr, mainArr[i]);
+
+        }
+
+        return procArr;
+
+    }
+
+    public static <E extends Object> E[] shuffle(E[] mainArr) {
+
+        final char[] finalArr = new char[0];
+        final int[] shuffIndexArr = new int[0];
+        final int totalSize = mainArr.length;
+
+        int cuts = 0;
+        while (cuts == 0) {
+            cuts = Double.valueOf(Math.random() * totalSize).intValue();
+        }
+
+        final int cascadeFactor = totalSize;
+        int cascades = 0;
+        while (cascades == 0) {
+            cascades = Double.valueOf(Math.random() * cascadeFactor).intValue();
+        }
+
+        while (cuts > 0) {
+            mainArr = doShuffle(mainArr, cascades);
+            cuts--;
+        }
+
+        return mainArr;
+
+    }
+
+    public static char[] shuffle(char[] mainArr) {
+
+        final char[] finalArr = new char[0];
+        final int[] shuffIndexArr = new int[0];
+        final int totalSize = mainArr.length;
+        // final int pcuts = totalSize < 10 ? totalSize/2;
+        int cutfactor = totalSize / 2 > 5 ? totalSize / 2 : 5;
+        int cuts = 0;
+        while (cuts < 3) {
+            cuts = Double.valueOf(Math.random() * cutfactor).intValue();
+        }
+
+        final int cascadeFactor = totalSize / 2 + 4;
+        final int cascades = Double.valueOf(Math.random() * cascadeFactor).intValue();
+
+        for (; cuts != 0; cuts--) {
+            mainArr = doShuffle(mainArr, cascades);
+        }
+
+        return mainArr;
+
+    }
+
+    private static char[] doShuffle(char[] currentArr, int cascades) {
+
+        try {
+
+            final int maxIndex = currentArr.length - 1;
+            char[] finalCutArr = new char[0];
+            int cutAt = Double.valueOf(Math.random() * maxIndex).intValue();
+
+            if (cutAt > maxIndex) {
+                cutAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            }
+
+            if (cutAt + cascades > maxIndex) {
+                cascades = 0;
+            }
+
+            if (cascades < maxIndex) {
+                // int cutAtCopy = cutAt;
+                for (int x = 0; x < cascades; x++) {
+
+                    if (cutAt > maxIndex) {
+                        cutAt = maxIndex - cutAt;
+                    }
+
+                    finalCutArr = addToCharArray(finalCutArr, currentArr[cutAt]);
+                    currentArr = removeFromCharArray(currentArr, cutAt);
+                }
+
+            }
+
+            int appendAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            while (cutAt == appendAt) {
+                appendAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            }
+
+            for (int x = 0; x < finalCutArr.length; x++, appendAt++) {
+                currentArr = addCharAt(currentArr, appendAt, finalCutArr[x]);
+            }
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+
+        return currentArr;
+    }
+
+    private static <E extends Object> E[] doShuffle(E[] currentArr, int cascades) {
+
+        try {
+
+            final int maxIndex = currentArr.length;
+            E[] finalCutArr = (E[]) Array.newInstance(currentArr.getClass().getComponentType(), 0);
+            int cutAt = Double.valueOf(Math.random() * maxIndex).intValue();
+
+            if (cutAt > maxIndex) {
+                cutAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            }
+
+            if (cutAt + cascades > maxIndex) {
+                cascades = 1;
+            }
+
+            if (cascades < maxIndex) {
+                // int cutAtCopy = cutAt;
+                for (int x = 0; x < cascades; x++) {
+
+                    if (cutAt > maxIndex) {
+                        cutAt = maxIndex - cutAt;
+                    }
+
+                    finalCutArr = add(finalCutArr, currentArr[cutAt]);
+                    currentArr = removeFrom(currentArr, cutAt);
+                }
+
+            }
+
+            int appendAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            while (cutAt == appendAt) {
+                appendAt = Double.valueOf(Math.random() * maxIndex / 2).intValue();
+            }
+
+            for (int x = 0; x < finalCutArr.length; x++, appendAt++) {
+                currentArr = addAt(currentArr, appendAt, finalCutArr[x]);
+            }
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+
+        return currentArr;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E> E[] addAt(final E[] mainArr, int targetiIndex, final E item) throws Exception {
+
+        final E[] mainArrInc = (E[]) Array.newInstance(mainArr.getClass().getComponentType(), mainArr.length + 1);
+
+        if (targetiIndex < 0) {
+            throw new Exception("Invalid index for method addAt");
+        }
+
+        if (targetiIndex > mainArr.length - 1) {
+            targetiIndex = mainArrInc.length - 1;
+        }
+
+        int itemAddedInd = 0;
+        for (int i = 0, pi = 0; i < mainArr.length; i++, pi++) {
+            if (i == targetiIndex) {
+                mainArrInc[pi] = item;
+                ++pi;
+                ++itemAddedInd;
+            }
+            mainArrInc[pi] = mainArr[i];
+        }
+
+        if (itemAddedInd == 0) {
+            mainArrInc[mainArrInc.length - 1] = item;
+        }
+
+        return (E[]) mainArrInc;
+
+    }
+
+    public static <E> E[] removeFrom(final E[] mainArr, final int ti) {
+
+        var finalArr = (E[]) Array.newInstance(mainArr.getClass().getComponentType(), 0);
+        for (int i = 0; i < mainArr.length; i++) {
+
+            if (i == ti) {
+                continue;
+            } else {
+                finalArr = add(finalArr, mainArr[i]);
+            }
+        }
+
+        return (E[]) finalArr;
+    }
+
+    public static char[] removeFromCharArray(final char[] mainArr, final int ti) {
+
+        char[] procArr = new char[0];
+        for (int i = 0; i < mainArr.length; i++) {
+
+            if (i == ti) {
+                continue;
+            } else {
+                procArr = addToCharArray(procArr, mainArr[i]);
+            }
+        }
+
+        return procArr;
+    }
+
+    public static char[] addCharAt(final char[] mainArr, int targetiIndex, final char item) throws Exception {
+
+        final char[] mainArrInc = new char[mainArr.length + 1];
+
+        if (targetiIndex < 0) {
+            throw new Exception("Invalid index for method addAt");
+        }
+
+        if (targetiIndex > mainArr.length - 1) {
+            targetiIndex = mainArrInc.length - 1;
+        }
+
+        int itemAddedInd = 0;
+        for (int i = 0, pi = 0; i < mainArr.length; i++, pi++) {
+            if (i == targetiIndex) {
+                mainArrInc[pi] = item;
+                ++pi;
+                ++itemAddedInd;
+            }
+            mainArrInc[pi] = mainArr[i];
+        }
+
+        if (itemAddedInd == 0) {
+            mainArrInc[mainArrInc.length - 1] = item;
+        }
+
+        return mainArrInc;
+
+    }
+
+
+    public static char[][] reorder(final char[][] mainArr, final int[] initSortModeArr, final SortMode order) {
+
+        final char[][] expDRowRO = new char[mainArr.length][];
+        int[] expSortModeArr = new int[0];
+        if (order != null) {
+            expSortModeArr = ContainerUtil.purgeSort(initSortModeArr,
+                    order.equals(SortMode.Asc) ? SortMode.Asc
+                            : SortMode.Desc);
+        } else {
+            expSortModeArr = initSortModeArr;
+        }
+
+        for (int i = 0; i < expSortModeArr.length; i++) {
+            expDRowRO[i] = mainArr[expSortModeArr[i]];
+        }
+
+        return expDRowRO;
+
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E extends Object> E[] reorder(final E[] mainArr, int[] initSortModeArr,
+            final SortMode order) {
+
+        if (initSortModeArr == null) {
+            initSortModeArr = MathUtil.generateNumArrByRange(mainArr.length, 0, 1);
+        }
+
+        E[] expDRowRO = (E[]) Array.newInstance(mainArr.getClass().componentType(), 0);
+        int[] expSortModeArr = new int[0];
+        if (order != null) {
+            expSortModeArr = ContainerUtil.purgeSort(initSortModeArr,
+                    order.equals(SortMode.Asc) ? SortMode.Asc
+                            : SortMode.Desc);
+        } else {
+            expSortModeArr = initSortModeArr;
+        }
+
+        for (int i = 0; i < expSortModeArr.length; i++) {
+            expDRowRO = add(expDRowRO, mainArr[expSortModeArr[i]]);
+        }
+
+        return expDRowRO;
+    }
+
+    public static <E extends Object> int hasItemAt(final E[] currentArr, final E item,
+            final MatchCriteria... optCriteria)
+            throws Exception {
+
+        // note ignores cases
+        final MatchCriteria matchCriteria = optCriteria == null || optCriteria.length == 0 ? MatchCriteria.First
+                : optCriteria[0];
+
+        if (!matchCriteria.name().equals("First") && !matchCriteria.name().equals("Last")) {
+            throw new Exception("Invalid criteria");
+        }
+
+        int foundAt = -1;
+        for (int i = 0; i < currentArr.length; i++) {
+
+            Object currentRow = currentArr[i];
+            Object targetItem = item;
+            if (item instanceof String) {
+                currentRow = currentRow.toString().toLowerCase();
+                targetItem = item.toString().toLowerCase();
+            }
+
+            if (currentRow.equals(targetItem)) {
+                foundAt = i;
+                if (matchCriteria.name().equals("First")) {
+                    return foundAt;
+                }
+            }
+
+        }
+
+        return foundAt;
+
+    }
+
+    public static Map<String, String> convertToDateMap(final String dateStr) {
+        final Map<String, String> dateTimeMap = new LinkedHashMap<>();
+
+        try {
+
+            // fills as per standard format
+            final int dateSepCount = StringUtil.occurs(dateStr.toCharArray(), '-');
+            final int dateSep2Count = StringUtil.occurs(dateStr.toCharArray(), '/');
+            final int timeSepCount = StringUtil.occurs(dateStr.toCharArray(), ':');
+
+            if (dateSepCount == 2 || dateSep2Count == 2) {
+
+                String dateSection = dateStr;
+
+                if (timeSepCount >= 2) {
+                    dateSection = dateStr.substring(0, dateStr.indexOf("T"));
+                }
+
+                final String[] dateParts = dateSection.split("-");
+
+                int passes = 0;
+                final int secFilled = 0;
+                for (int i = 0; i < 3; i++, passes += i) {
+
+                    if (dateParts[i].length() == 4) {
+                        dateTimeMap.put("year", dateParts[i]);
+                        ++i;
+
+                        if (dateTimeMap.get("month") == null) {
+                            dateTimeMap.put("month", dateParts[i]);
+                        }
+
+                        ++i;
+                        dateTimeMap.put("day", dateParts[i]);
+                        break;
+
+                    } else {
+
+                        // secFilled
+                        if (dateTimeMap.get("day") == null) {
+                            dateTimeMap.put("day", dateParts[i]);
+                        }
+
+                        ++i;
+                        if (dateTimeMap.get("month") == null && dateParts[i].length() == 2) {
+                            dateTimeMap.put("month", dateParts[i]);
+                        } else {
+
+                            dateTimeMap.put("year", dateParts[i]);
+                            ++i;
+                            dateTimeMap.put("month", dateParts[i]);
+                            break;
+                        }
+
+                        dateTimeMap.put("year", dateParts[i]);
+                        break;
+
+                    }
+
+                }
+
+                if (Integer.parseInt(dateTimeMap.get("month")) > 12) {
+                    dateTimeMap.put("day", dateTimeMap.get("month"));
+                    dateTimeMap.put("month", dateTimeMap.get("day"));
+                }
+
+                if (timeSepCount < 2) {
+
+                    dateTimeMap.put("hours", "00");
+                    dateTimeMap.put("minutes", "00");
+                    dateTimeMap.put("seconds", "000");
+
+                    return dateTimeMap;
+                }
+            }
+
+            if (timeSepCount > 0) {
+
+                final String timeSection = dateStr.substring(dateStr.indexOf(":") - 2);
+                final String[] timeParts = timeSection.split(":");
+
+                int passes = 0;
+                final int secFilled = 0;
+                for (int i = 0; i < 3; i++, passes += i) {
+
+                    if (timeParts[i].length() == 2) {
+                        dateTimeMap.put("hours", timeParts[i]);
+                        ++i;
+
+                        if (dateTimeMap.get("minutes") == null) {
+                            dateTimeMap.put("minutes", timeParts[i]);
+                        }
+
+                        ++i;
+                        dateTimeMap.put("seconds",
+                                timeParts[i].contains(".") ? timeParts[i].substring(0, timeParts[i].indexOf("."))
+                                        : timeParts[i]);
+                        break;
+
+                    } else {
+
+                        // secFilled
+                        if (dateTimeMap.get("seconds") == null) {
+                            dateTimeMap.put("seconds",
+                                    timeParts[i].contains(".") ? timeParts[i].substring(0, timeParts[i].indexOf("."))
+                                            : timeParts[i]);
+                        }
+
+                        ++i;
+                        if (dateTimeMap.get("minutes") == null && timeParts[i].length() == 2) {
+                            dateTimeMap.put("minutes", timeParts[i]);
+                        } else {
+
+                            dateTimeMap.put("hours", timeParts[i]);
+                            ++i;
+                            dateTimeMap.put("minutes", timeParts[i]);
+                            break;
+                        }
+
+                        dateTimeMap.put("hours", timeParts[i]);
+                        break;
+
+                    }
+
+                }
+
+            }
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+
+        return dateTimeMap;
+
+    }
+
+
 
 }
