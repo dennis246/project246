@@ -1,1 +1,1 @@
-basic utilities and test cases written using jdk.
+basic utility functions for string processing and sequencing.
