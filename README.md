@@ -1,3 +1,3 @@
-Basic utility functions for string processing and sequencing. added pattern proc tests.
-Contains a very inefficient json&xml parser. [started april 2025 or before. Tried many times to get this to work when employed. this was never asked for but felt the need to write something out of curiosity]
-needless to mention but all efforts were for learning and experimentation without copying/peeking from an external src. 
+WORK DECLARATION
+This was a self-derived project without external assistance or adivse. The charset sequences and keywords and the files are not to be used for second testing or distribution or
+reinterpretation or misuse of any kind how or when so ever intercepted. I have never allowed it.
